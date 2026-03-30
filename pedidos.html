@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Pedidos | Origem Tech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white p-10">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-blue-400 border-b border-slate-700 pb-4">Pedidos Recebidos</h1>
+        
+        <div id="lista-pedidos" class="grid gap-4">
+            <p class="text-slate-400">Carregando pedidos...</p>
+        </div>
+    </div>
+
+    async function carregarPedidos() {
+    try {
+        const res = await fetch('/api/pedidos');
+        const pedidos = await res.json();
+        const container = document.getElementById('lista-pedidos');
+        
+        container.innerHTML = pedidos.map(p => `
+            <div class="bg-slate-800 p-6 rounded-lg shadow-md border-l-4 border-blue-500 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold">${p.nome}</h2>
+                    <p class="text-blue-300 text-sm">${p.email}</p>
+                    <p class="mt-2 text-slate-300 italic">" ${p.servico} "</p>
+                </div>
+                <button onclick="deletarPedido('${p._id}')" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded text-sm font-bold transition">
+                    Excluir
+                </button>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function deletarPedido(id) {
+    if(confirm("Tem certeza que deseja excluir este pedido?")) {
+        const res = await fetch(`/api/pedidos}`, { method: 'DELETE' });
+        if(res.ok) carregarPedidos(); // Atualiza a lista na hora
+    }
+}
+carregarPedidos();
