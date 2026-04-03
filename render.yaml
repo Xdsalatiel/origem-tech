@@ -2,5 +2,8 @@ services:
   - type: web
     name: origem-tech
     env: node
+    region: ohio
+    plan: free
     buildCommand: npm install
     startCommand: node servidor.js
+    rootDir: ./
