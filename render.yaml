@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: origem-tech
+    env: node
+    buildCommand: npm install
+    startCommand: node servidor.js
