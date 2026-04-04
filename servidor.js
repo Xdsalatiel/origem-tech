@@ -21,7 +21,7 @@ app.use(express.static(__dirname)); // Serve o index.html e pedidos.html
 
 // 3. CONEXÃO COM O MONGODB
 // A URI agora vem de uma variável de ambiente para proteger sua senha
-const uri = process.env.MONGO_URI || 'mongodb+srv://adm:FjMgGAahTwTUt72T@cluster0.8earwd6.mongodb.net/origemDB?retryWrites=true&w=majority';
+const uri = process.env.MONGO_URI;
 
 mongoose.connect(uri)
     .then(() => console.log('✅ Conexão estabelecida: Origem Tech está Online!'))
@@ -64,6 +64,6 @@ app.delete('/api/pedidos/:id', seguranca, async (req, res) => {
 
 // 5. INICIALIZAÇÃO DO SERVIDOR
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
