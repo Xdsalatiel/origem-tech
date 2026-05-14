@@ -1,63 +1,47 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
-const basicAuth = require('express-basic-auth');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
-
-// Conexão com o MongoDB Atlas
-const mongoURI = process.env.MONGODB_URI;
-
-mongoose.connect(mongoURI)
-    .then(() => console.log('Conectado ao MongoDB com sucesso!'))
-    .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
-
-// Schema de Pedidos
-const clienteSchema = new mongoose.Schema({
-    nome: String,
-    telefone: String,
-    servico: String,
-    mensagem: String,
-    createdAt: { type: Date, default: Date.now }
-});
-
-const Cliente = mongoose.model('Cliente', clienteSchema);
-
-// Autenticação básica para proteger a visualização dos pedidos
-const auth = basicAuth({
-    users: { [process.env.ADMIN_USER || 'admin']: process.env.ADMIN_PASS || '123' },
-    challenge: true,
-    realm: 'Área da Origem Tech'
-});
-
-// Rotas da API
-app.post('/api/pedidos', async (req, res) => {
-    try {
-        const novoPedido = new Cliente(req.body);
-        await novoPedido.save();
-        res.status(201).json({ message: 'Pedido enviado!' });
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao salvar.' });
-    }
-});
-
-app.get('/api/pedidos', auth, async (req, res) => {
-    try {
-        const pedidos = await Cliente.find().sort({ createdAt: -1 });
-        res.json(pedidos);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao buscar.' });
-    }
-});
-
-// Inicialização
 const PORT = process.env.PORT || 3000;
+
+// 1. MIDDLEWARES
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve arquivos estáticos (CSS, Imagens, JS do navegador)
+// Isso garante que o site carregue o visual corretamente
+app.use(express.static(__dirname)); 
+
+// 2. CONEXÃO COM MONGODB
+// Usa a URI que vimos no seu arquivo .env
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('✅ Conectado ao MongoDB com sucesso!'))
+    .catch(err => console.error('❌ Erro ao conectar ao MongoDB:', err));
+
+// 3. MODELO DE DADOS (Cliente)
+const Cliente = require('./cliente');
+
+// 4. ROTAS
+
+// Rota Principal: Resolve o erro "Cannot GET /" enviando o index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Rota para receber dados do formulário de contato
+app.post('/api/clientes', async (req, res) => {
+    try {
+        const novoCliente = new Cliente(req.body);
+        await novoCliente.save();
+        res.status(201).json({ mensagem: 'Dados salvos com sucesso!' });
+    } catch (error) {
+        res.status(400).json({ erro: 'Erro ao salvar dados', detalhes: error.message });
+    }
+});
+
+// 5. INICIALIZAÇÃO DO SERVIDOR
 app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`🚀 Servidor Origem Tech rodando na porta ${PORT}`);
 });
