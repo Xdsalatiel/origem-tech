@@ -1,63 +1,63 @@
-require('dotenv').config(); // Carrega as variáveis do arquivo .env
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const basicAuth = require('express-basic-auth');
-const path = require('path');
-const Cliente = require('./models/Cliente');
+require('dotenv').config();
 
 const app = express();
 
-// 1. CONFIGURAÇÃO DE SEGURANÇA (ADMIN)
-// Usa as variáveis definidas no Render ou valores padrão
-const adminUser = process.env.ADMIN_USER || 'admin';
-const adminPass = process.env.ADMIN_PASS || '123';
-
-app.use('/pedidos.html', basicAuth({
-    users: { [adminUser]: adminPass },
-    challenge: true,
-    realm: 'Origem Tech Admin'
-}));
-
-// 2. MIDDLEWARES
+// Middlewares
 app.use(cors());
 app.use(express.json());
-// Serve os arquivos estáticos (HTML, CSS, JS) da pasta atual
-app.use(express.static(__dirname));
+app.use(express.static('public'));
 
-// 3. CONEXÃO COM MONGODB
-// Certifique-se de que o nome no Render seja MONGODB_URI
+// Conexão com o MongoDB Atlas
 const mongoURI = process.env.MONGODB_URI;
 
 mongoose.connect(mongoURI)
     .then(() => console.log('Conectado ao MongoDB com sucesso!'))
     .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
-// 4. ROTAS DA API
+// Schema de Pedidos
+const clienteSchema = new mongoose.Schema({
+    nome: String,
+    telefone: String,
+    servico: String,
+    mensagem: String,
+    createdAt: { type: Date, default: Date.now }
+});
 
-// Rota para salvar pedido (vinda do index.html)
+const Cliente = mongoose.model('Cliente', clienteSchema);
+
+// Autenticação básica para proteger a visualização dos pedidos
+const auth = basicAuth({
+    users: { [process.env.ADMIN_USER || 'admin']: process.env.ADMIN_PASS || '123' },
+    challenge: true,
+    realm: 'Área da Origem Tech'
+});
+
+// Rotas da API
 app.post('/api/pedidos', async (req, res) => {
     try {
-        const novoCliente = new Cliente(req.body);
-        await novoCliente.save();
-        res.status(201).json({ message: 'Pedido enviado com sucesso!' });
+        const novoPedido = new Cliente(req.body);
+        await novoPedido.save();
+        res.status(201).json({ message: 'Pedido enviado!' });
     } catch (error) {
-        res.status(400).json({ error: 'Erro ao salvar pedido.' });
+        res.status(500).json({ error: 'Erro ao salvar.' });
     }
 });
 
-// Rota para buscar pedidos (usada no pedidos.html)
-app.get('/api/pedidos', async (req, res) => {
+app.get('/api/pedidos', auth, async (req, res) => {
     try {
         const pedidos = await Cliente.find().sort({ createdAt: -1 });
         res.json(pedidos);
     } catch (error) {
-        res.status(500).json({ error: 'Erro ao buscar pedidos.' });
+        res.status(500).json({ error: 'Erro ao buscar.' });
     }
 });
 
-// 5. INICIALIZAÇÃO DO SERVIDOR
-// O Render define a porta automaticamente na variável PORT
+// Inicialização
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
+});
