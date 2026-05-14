@@ -40,8 +40,3 @@ app.post('/api/clientes', async (req, res) => {
         res.status(400).json({ erro: 'Erro ao salvar dados', detalhes: error.message });
     }
 });
-
-// 5. INICIALIZAÇÃO DO SERVIDOR
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor Origem Tech rodando na porta ${PORT}`);
-});
