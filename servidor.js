@@ -6,37 +6,75 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 1. MIDDLEWARES
+// =========================
+// MIDDLEWARES
+// =========================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve arquivos estáticos (CSS, Imagens, JS do navegador)
-// Isso garante que o site carregue o visual corretamente
-app.use(express.static(__dirname)); 
+// Arquivos estáticos
+app.use(express.static(__dirname));
 
-// 2. CONEXÃO COM MONGODB
-// Usa a URI que vimos no seu arquivo .env
+// =========================
+// CONEXÃO COM MONGODB
+// =========================
 mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('✅ Conectado ao MongoDB com sucesso!'))
-    .catch(err => console.error('❌ Erro ao conectar ao MongoDB:', err));
+    .then(() => {
+        console.log('✅ Conectado ao MongoDB com sucesso!');
+    })
+    .catch((err) => {
+        console.error('❌ Erro ao conectar ao MongoDB:', err);
+    });
 
-// 3. MODELO DE DADOS (Cliente)
+// =========================
+// MODELO
+// =========================
 const Cliente = require('./cliente');
 
-// 4. ROTAS
+// =========================
+// ROTAS
+// =========================
 
-// Rota Principal: Resolve o erro "Cannot GET /" enviando o index.html
+// Página inicial
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rota para receber dados do formulário de contato
+// Health Check (útil para o Render)
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'online',
+        timestamp: new Date()
+    });
+});
+
+// Salvar cliente
 app.post('/api/clientes', async (req, res) => {
     try {
         const novoCliente = new Cliente(req.body);
+
         await novoCliente.save();
-        res.status(201).json({ mensagem: 'Dados salvos com sucesso!' });
+
+        res.status(201).json({
+            sucesso: true,
+            mensagem: 'Dados salvos com sucesso!'
+        });
+
     } catch (error) {
-        res.status(400).json({ erro: 'Erro ao salvar dados', detalhes: error.message });
+
+        console.error(error);
+
+        res.status(400).json({
+            sucesso: false,
+            erro: 'Erro ao salvar dados',
+            detalhes: error.message
+        });
     }
+});
+
+// =========================
+// INICIAR SERVIDOR
+// =========================
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
